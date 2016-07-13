@@ -87,8 +87,6 @@ public class MainActivity extends Activity implements LocationListener {
     private LocationManager lManager;
     private Location[] locationT = new Location[3];
     private Location location;
-
-
     private static Context mContext;
     int i = 0;
     int demarer = 0;
@@ -123,6 +121,7 @@ public class MainActivity extends Activity implements LocationListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         mContext = getApplicationContext();
 
         t = TelephonyInfo.getInstance(mContext);
@@ -149,6 +148,7 @@ public class MainActivity extends Activity implements LocationListener {
 
 
 
+
         position.setText("");
 
     }
@@ -156,8 +156,6 @@ public class MainActivity extends Activity implements LocationListener {
 
     View.OnClickListener startClickListener = new View.OnClickListener() {
         public void onClick(final View v) {
-            Method method[] = Sm.getClass().getMethods();
-            Method method2[] = TelephonManager.getClass().getMethods();
             mode = t.getNetworkClass(mContext);
             demarer = 1;
             List<String> providers = lManager.getProviders(true);
@@ -359,7 +357,7 @@ public class MainActivity extends Activity implements LocationListener {
 
 
     public class MultiSimListener extends PhoneStateListener {
-/*
+
         private Field subIdField;
         private long subId = -1;
 
@@ -368,8 +366,8 @@ public class MainActivity extends Activity implements LocationListener {
             try {
                 // Get the protected field mSubId of PhoneStateListener and set it
                 subIdField = this.getClass().getSuperclass().getDeclaredField("mSubId");
-                subscriptionField.setAccessible(true);
-                subscriptionField.set(this, subId);
+                subIdField.setAccessible(true);
+                subIdField.set(this, subId);
                 this.subId = subId;
             } catch (NoSuchFieldException e) {
 
@@ -384,7 +382,7 @@ public class MainActivity extends Activity implements LocationListener {
         public void onSignalStrengthsChanged(SignalStrength signalStrength) {
             // Handle the event here, subId indicates the subscription id if > 0
         }
-*/
+
     }
 
     private void obtenirPosition() {
@@ -530,6 +528,28 @@ public class MainActivity extends Activity implements LocationListener {
         }
 
         w.WriteSettings(text);
+    }
+    public void test(){
+        Class x = TelephonManager.getClass();
+        Class y = Sm.getClass();
+        //Field[] fields1 = x.getDeclaredFields();
+       // Method[] methods1 = x.getMethods();
+       // Field[] fields2 = y.getDeclaredFields();
+        Method[] methods2 = y.getMethods();
+
+        try {
+            methods2[6].invoke(Sm,0);
+            t = TelephonyInfo.getInstance(mContext);
+            Sm = SubscriptionManager.from(mContext);
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        Class MultiSimClass = null;
+
+
+
     }
 }
 
