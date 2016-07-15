@@ -117,6 +117,7 @@ public class MainActivity extends Activity implements LocationListener {
     SubscriptionManager Sm;
     SubscriptionInfo operateur;
     TelephonyInfo t;
+    MyLocation Ml;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -145,6 +146,7 @@ public class MainActivity extends Activity implements LocationListener {
         TelephonManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         lManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         btnStop.setEnabled(false);
+        Ml = new MyLocation(lManager,MainActivity.this,btnpause);
 
 
 
@@ -165,7 +167,7 @@ public class MainActivity extends Activity implements LocationListener {
                 return;
             }
 
-            obtenirPosition();
+            sources = Ml.obtenirPosition();
             pause = false;
             if(continu == false) {
                 continu = true;
@@ -529,28 +531,7 @@ public class MainActivity extends Activity implements LocationListener {
 
         w.WriteSettings(text);
     }
-    public void test(){
-        Class x = TelephonManager.getClass();
-        Class y = Sm.getClass();
-        //Field[] fields1 = x.getDeclaredFields();
-       // Method[] methods1 = x.getMethods();
-       // Field[] fields2 = y.getDeclaredFields();
-        Method[] methods2 = y.getMethods();
 
-        try {
-            methods2[6].invoke(Sm,0);
-            t = TelephonyInfo.getInstance(mContext);
-            Sm = SubscriptionManager.from(mContext);
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        Class MultiSimClass = null;
-
-
-
-    }
 }
 
 
