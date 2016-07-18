@@ -114,6 +114,7 @@ public class MainActivity extends Activity implements LocationListener {
     Writter w = new Writter();
     boolean lancer = false;
     boolean valid = true;
+    boolean dual = true;
     SubscriptionManager Sm;
     SubscriptionInfo operateur;
     TelephonyInfo t;
