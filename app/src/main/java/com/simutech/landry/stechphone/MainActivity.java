@@ -7,11 +7,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoGsm;
@@ -33,11 +35,13 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
+import android.os.Bundle;
+import android.os.Handler;
 import java.lang.reflect.Field;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.LogRecord;
 
 public class MainActivity extends Activity implements LocationListener {
     public TextView statut;
@@ -49,6 +53,9 @@ public class MainActivity extends Activity implements LocationListener {
     public Button btnstart;
     public Button btnStop;
     public Button change;
+    public Button btnEgps;
+    public Button btnEmes;
+    public Button btnEautre;
     public Button btnpause;
     public Button btnsend;
     public RadioButton r4g;
@@ -56,21 +63,16 @@ public class MainActivity extends Activity implements LocationListener {
     public RadioButton r2g;
     public RelativeLayout rela;
     Calendar c;
-    int bg = 1;
+
     private LocationManager lManager;
     private Location location;
     private Location location2;
     private static Context mContext;
-    int i = 0;
-    int demarer = 0;
+
     TelephonyManager TelephonManager;
     String[] operateur = new String[2];
     String[] text = new String[2];
     String[] mode = new String[2];
-    int signalcdma = 0;
-    int signalgsm = 0;
-    int signallte = 0;
-    int a = 0;
     String nu = "";
     int num = 0;
     long duree;
@@ -81,8 +83,11 @@ public class MainActivity extends Activity implements LocationListener {
     public String[] sources;
     Thread start;
     Thread majheure;
+    Thread coulerT;
     boolean continu = false;
-    Writter w = new Writter();
+    boolean colorchanged = false;
+    Writter wm ;
+    Writter wE ;
     boolean dual = true;
     SubscriptionManager Sm;
     String Tdbm1;
@@ -92,9 +97,21 @@ public class MainActivity extends Activity implements LocationListener {
     double[] lat = new double[2];
     double[] lon = new double[2];
     String type = "";
-
+    boolean valid=true;
+    int couleurfond = 1; // 1 vert -1 rouge 2 gris 0 blanc
+    int i = 0;
+    int nbpos=0;
+    int demarer = 0;
+    int signalcdma = 0;
+    int signalgsm = 0;
+    int signallte = 0;
+    int a = 0;
+    Handler handler;
+    int[] color;
+    boolean[] colorb;
     MultiSimListener muti;
-
+    Erreur er;
+    Button[] but;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -106,6 +123,9 @@ public class MainActivity extends Activity implements LocationListener {
 
         mode[1] = "2G";
         mode[0] = "";
+        color = new int[]{1,1,1};
+
+        colorb = new boolean[]{false,false,false};
         rela = (RelativeLayout) findViewById(R.id.relay);
         statut = (TextView) findViewById(R.id.Ttime);
         dbm1 = (TextView) findViewById(R.id.dbm1);
@@ -114,6 +134,9 @@ public class MainActivity extends Activity implements LocationListener {
         r4g = (RadioButton) findViewById(R.id.radio2G);
         r3g = (RadioButton) findViewById(R.id.radio3G);
         r2g = (RadioButton) findViewById(R.id.radio4G);
+        btnEgps = (Button) findViewById(R.id.Gps);
+        btnEmes = (Button) findViewById(R.id.mesure);
+        btnEautre = (Button) findViewById(R.id.autre);
         btnstart = (Button) findViewById(R.id.btnstart);
         btnstart.setOnClickListener(startClickListener);
         btnStop = (Button) findViewById(R.id.btnStop);
@@ -124,28 +147,75 @@ public class MainActivity extends Activity implements LocationListener {
         btnpause.setOnClickListener(pauseClickListener);
         btnsend = (Button) findViewById(R.id.btnsend);
         btnsend.setOnClickListener(sendClickListener);
+        but = new Button[]{btnEgps,btnEmes,btnEautre};
         btnpause.setEnabled(false);
         btnsend.setEnabled(false);
         TelephonManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         lManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         btnStop.setEnabled(false);
+        Date d = new Date();
+        DateFormat df = new DateFormat();
+        Heure = (String) DateFormat.format("HH:mm:ss", d);
+
         List<SubscriptionInfo> list = Sm.getActiveSubscriptionInfoList();
+        final Button[] but = new Button[]{btnEgps, btnEmes, btnEautre};
+        wE = new Writter("ErreurAppli",1,Heure,er,handler);
         if (list.size() == 2) {
+            wm = new Writter("donnéesmesure",2,Heure,er,handler);
             operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
             operateur[1] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(1).getCarrierName();
             idsim1 = list.get(0).getSubscriptionId();
             idsim2 = list.get(1).getSubscriptionId();
             muti = new MultiSimListener(idsim2);
         } else {
+            wm = new Writter("donnéesmesure",1,Heure,er,handler);
             operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
             dual = false;
         }
+        
+        handler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                Bundle b = msg.getData();
+                Integer key = b.getInt("KEY");
+                Integer value = b.getInt("value");
+                if (key == 3) {
+                    switch (value) {
+                        case 1:
+                            statut.setBackgroundColor(Color.GREEN);
+
+                            break;
+                        case -1:
+                            statut.setBackgroundColor(Color.RED);
+                            break;
+                    }
+                } else {
+                    switch (value) {
+                        case 1:
+                            but[key].setEnabled(true);
+
+                            break;
+                        case -1:
+                            but[key].setEnabled(false);
+                            break;
+                    }
+
+
+                }
+            }
+
+        };
+
     }
 
 
     View.OnClickListener startClickListener = new View.OnClickListener() {
         public void onClick(final View v) {
-
+            if(!(wm.success && wE.success)){
+                ToastMaker to = new ToastMaker(MainActivity.this, "Impossible d'enregistrer verifier la mémoire du télephone", Color.RED);
+                to.createtwo();
+                return;
+            }
             if (dual) {
                 TelephonManager.listen(muti,
                         PhoneStateListener.LISTEN_SIGNAL_STRENGTHS
@@ -163,6 +233,7 @@ public class MainActivity extends Activity implements LocationListener {
                 to.createtwo();
                 return;
             }
+
             r3g.setClickable(false);
             r4g.setClickable(false);
             r2g.setClickable(false);
@@ -170,6 +241,9 @@ public class MainActivity extends Activity implements LocationListener {
             pause = false;
             if (!continu) {
                 continu = true;
+                er = new Erreur(but);
+                er.cont = true;
+                er.started = false;
                 majheure = new Heurethread();
                 majheure.start();
                 start = new Monthread();
@@ -181,13 +255,16 @@ public class MainActivity extends Activity implements LocationListener {
             btnpause.setEnabled(true);
             ToastMaker to = new ToastMaker(MainActivity.this, "debut enregistrement", Color.GREEN);
             to.createone();
+            couleurfond = 1;
             statut.setBackgroundColor(Color.GREEN);
+
         }
     };
     View.OnClickListener stopClickListener = new View.OnClickListener() {
         public void onClick(final View v) {
             a = 2;
             continu = false;
+            er.cont = false;
             try {
                 Thread.sleep(900);
             } catch (InterruptedException e) {
@@ -202,9 +279,12 @@ public class MainActivity extends Activity implements LocationListener {
             btnStop.setEnabled(false);
             ToastMaker to = new ToastMaker(MainActivity.this, "Fin enregistrement", Color.RED);
             to.createone();
+            couleurfond=0;
             statut.setBackgroundColor(Color.WHITE);
             info.setText("dernier enregistrement a "+Heure);
-            bg=3;
+            Erreur.save(wE,Heure,Ldate);
+            er.play = false ;
+
         }
     };
     View.OnClickListener changeClickListener = new View.OnClickListener() {
@@ -227,8 +307,11 @@ public class MainActivity extends Activity implements LocationListener {
             btnpause.setEnabled(false);
             ToastMaker to = new ToastMaker(MainActivity.this, "interuption enregistrement", Color.BLUE);
             to.createone();
+            couleurfond = 2;
             statut.setBackgroundColor(Color.GRAY);
-            bg = 2;
+            er.cont = false;
+            er.color[3]=2;
+
 
         }
     };
@@ -240,32 +323,25 @@ public class MainActivity extends Activity implements LocationListener {
     };
 
     private String format(int signal, int idsim) {
-        boolean valid=false;
-        //Time today = new Time(Time.getCurrentTimezone());
-        //today.setToNow();
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            return "TODO";
-        }
-
         if (location != null) {
             lat[0] = location.getLatitude();
             lon[0] = location.getLongitude();
-            lat[1] = location2.getLatitude();
-            lon[1] = location2.getLongitude();
         } else {
             lat[idsim] = 0;
             lon[idsim] = 0;
         }
-        return signal + ";" + Heure + ";" + lat[0] + " ; " + lon[0] + "\n";
+        if(signal >= -150 && signal < 0)
+            return signal + ";" + Heure + ";" + lat[0] + " ; " + lon[0] + "\n";
+        else
+            return -150 + ";" + Heure + ";" + lat[0] + " ; " + lon[0] + "\n";
 
     }
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void ReadcellInfo() {
+        boolean valid = false;
         if (TelephonManager.getAllCellInfo() != null) {
             List<CellInfo> list = TelephonManager.getAllCellInfo();
-            String dat = getNetworkClass(mContext);
             for (CellInfo cell : list) {
                 int dbmValue;
                 if (cell.isRegistered()) {
@@ -275,6 +351,7 @@ public class MainActivity extends Activity implements LocationListener {
                             CellInfoLte cellLTE = (CellInfoLte) cell;
                             dbmValue = cellLTE.getCellSignalStrength().getDbm();
                             signallte = dbmValue;
+                            valid = true;
                             return;
                         }
                     }
@@ -284,6 +361,7 @@ public class MainActivity extends Activity implements LocationListener {
                             CellInfoWcdma cellWCDMA = (CellInfoWcdma) cell;
                             dbmValue = cellWCDMA.getCellSignalStrength().getDbm();
                             signalcdma = dbmValue;
+                            valid = true;
                             return;
 
                         }
@@ -294,19 +372,16 @@ public class MainActivity extends Activity implements LocationListener {
                             CellInfoGsm cellGSM = (CellInfoGsm) cell;
                             dbmValue = cellGSM.getCellSignalStrength().getDbm();
                             signalgsm = dbmValue;
+                            valid = true;
                             return;
                         }
-                        if (mode[0].equals("3G")) {
-                            CellInfoGsm cellGSM = (CellInfoGsm) cell;
-                            dbmValue = cellGSM.getCellSignalStrength().getDbm();
-                            signalcdma = dbmValue;
-                            return;
-                        }
-
                     }
 
                 }
             }
+        }
+        if(valid){
+            er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Sim 1"+mode[0]+" "+operateur[0]+" impossible de recuperer les données des antennes ",1,handler);
         }
     }
 
@@ -326,12 +401,18 @@ public class MainActivity extends Activity implements LocationListener {
                 subIdField.set(this, subId);
                 this.subId = subId;
             } catch (NoSuchFieldException e) {
+                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2"+mode[1]+" "+operateur[1]+" acces dual sim impossible ",2,handler);
+                btnpause.callOnClick();
                 e.printStackTrace();
 
             } catch (IllegalAccessException e) {
+                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2"+mode[1]+" "+operateur[1]+"access dual sim impossible",3,handler);
+                btnpause.callOnClick();
                 e.printStackTrace();
 
             } catch (IllegalArgumentException e) {
+                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2"+mode[1]+" "+operateur[1]+"acces dual sim impossible ",4,handler);
+                btnpause.callOnClick();
                 e.printStackTrace();
 
             }
@@ -343,6 +424,7 @@ public class MainActivity extends Activity implements LocationListener {
             if ((ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) &&
                     (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
                 // TODO: Consider calling
+                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Sim 2"+mode[1]+" "+operateur[1]+"problème  autorisation signal ",5,handler);
                 //    ActivityCompat#requestPermissions
                 // here to request the missing permissions, and then overriding
                 //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
@@ -367,6 +449,7 @@ public class MainActivity extends Activity implements LocationListener {
     }
 
     private void obtenirPosition() {
+
         List<String> providers = lManager.getProviders(true);
         sources = new String[providers.size()];
         int j = 0;
@@ -374,22 +457,21 @@ public class MainActivity extends Activity implements LocationListener {
             sources[j++] = provider;
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
+            er.NewErreur(Heure,Erreur.ERREUR_GPS,"autorisation gps refusée",6,handler);
             return;
         }
         for (int k = 1; k < 3; k++)
             lManager.requestLocationUpdates(sources[k], 100, 0, this);
         location = lManager.getLastKnownLocation("gps");
-        location2 = lManager.getLastKnownLocation("network");
+        if(location == null) {
+            er.NewErreur(Heure, Erreur.ERREUR_GPS, "dernière position gps inconnu ",7,handler);
+        }
     }
 
     public void onLocationChanged(Location llocation) {
         if (llocation.getProvider().equals("gps")) {
             this.location = llocation;
-            //dbm1.setText(llocation.getProvider().charAt(0)+" "+llocation.getLatitude()+"\n "+llocation.getLongitude());
-        }
-        if (llocation.getProvider().equals("network")) {
-            this.location2 = llocation;
-            //dbm2.setText(llocation.getProvider().charAt(0)+" "+llocation.getLatitude()+"\n "+llocation.getLongitude());
+            nbpos++;
         }
 
     }
@@ -420,9 +502,9 @@ public class MainActivity extends Activity implements LocationListener {
             while (continu) {
                 if (a == 0 || a == 2) {
                     c = Calendar.getInstance();
-                    w.WriteSettings(" mesure " + operateur[0] + " " + mode[0] + " " + Ldate + " " + Heure + "\n", mode[0], Ldate, nu, operateur[0], 0,Heure);
+                    wm.WriteSettings(" mesure " + operateur[0] + " " + mode[0] + " " + Ldate + " " + Heure + "\n", mode[0], Ldate, nu, operateur[0], 0,Heure);
                     if (dual)
-                        w.WriteSettings(" mesure " + operateur[1] + " " + mode[1] + " " + Ldate + " " + Heure + "\n", mode[1], Ldate, nu, operateur[1], 1,Heure);
+                        wm.WriteSettings(" mesure " + operateur[1] + " " + mode[1] + " " + Ldate + " " + Heure + "\n", mode[1], Ldate, nu, operateur[1], 1,Heure);
                     a = 0;
                 } else {
                     if (a == 1 && pause) {
@@ -456,7 +538,7 @@ public class MainActivity extends Activity implements LocationListener {
                             Tdbm2 = operateur[1] + " " + signalgsm + " dbm";
                         }
                     } else {
-                        if (mode[0].equals("3G") ) {
+                        if (mode[0].equals("3G") && type.equals("3G") ) {
                                 Thread t3 = new savethread(signalcdma, 0);
                                 t3.start();
                                 Tdbm1 = operateur[0] + " " + signalcdma + " dbm";
@@ -479,15 +561,20 @@ public class MainActivity extends Activity implements LocationListener {
                                 Thread t7 = new savethread(-150,0);
                                 t7.start();
                                 Tdbm1 = operateur[0] + " " + -150 + " dbm";
+                                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Type Reseau inconnu ",9,handler);
                                 if (dual) {
                                     Thread t8 = new savethread(signalgsm,1);
                                     t8.start();
                                     Tdbm2 = operateur[1] + " " + signalgsm + " dbm";
+
                                 }
                             }
                         }
                     }
                     i++;
+                    if(nbpos >2 && i>20 && nbpos <= i) {
+                        er.NewErreur(Heure, Erreur.ERREUR_GPS, "problème actualisation corrdonées gps ",8,handler);
+                    }
                     c = Calendar.getInstance();
                     duree = c.getTimeInMillis() - debut;
                     runOnUiThread(new Runnable() {
@@ -495,7 +582,6 @@ public class MainActivity extends Activity implements LocationListener {
                             if (i == 0)
                                 statut.setText("" + i);
                             else {
-                                //statut.setText(i + "  en " + duree + "ms\n");
                                 statut.setText(i + "");
                                 dbm1.setText(Tdbm1);
                                 dbm2.setText(Tdbm2);
@@ -516,27 +602,27 @@ public class MainActivity extends Activity implements LocationListener {
         }
         if (lat[0] == 0) {
             text[idsim] = signal + " " + mode[idsim] + Heure + " erreur geolocalisation\n ";
-            if(bg!=0)
+            if(couleurfond!=0)
             runOnUiThread(new Runnable() {
                 public void run() {
                     ToastMaker to = new ToastMaker(MainActivity.this, "Attention erreur geolocalisation veillez relancer" +
                             " l'application ou les paramètres", Color.RED);
                     to.createone();
                     statut.setBackgroundColor(Color.RED);
-                    bg = 0;
+                    couleurfond = 0;
                 }
             });
         } else {
-            if (bg == 0)
+            if (couleurfond == 0)
                 runOnUiThread(new Runnable() {
                     public void run() {
                         if (continu  && pause)
                             statut.setBackgroundColor(Color.GREEN);
-                        bg = 1;
+                        couleurfond = 1;
                     }
                 });
         }
-        w.WriteSettings(text[idsim], idsim);
+        wm.WriteSettings(text[idsim], idsim,Heure);
     }
 
     public String getNetworkClass(Context context) {
@@ -563,7 +649,8 @@ public class MainActivity extends Activity implements LocationListener {
             case TelephonyManager.NETWORK_TYPE_LTE:
                 return "4G";
             default:
-                return "Unknown";
+                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Type de reseau inconnu",9,handler);
+                return "reseau sim 1 inconnu";
         }
     }
 
@@ -599,6 +686,7 @@ public class MainActivity extends Activity implements LocationListener {
             prewrite(this.signal, this.a);
         }
     }
+
     public class Heurethread extends Thread {
 
         public Heurethread(){
@@ -612,6 +700,7 @@ public class MainActivity extends Activity implements LocationListener {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
+                    er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Erreur Systeme THREAD ZOMBI",10,handler);
                     e.printStackTrace();
                 }
             }

@@ -16,7 +16,7 @@
         android:layout_height="200dp"
         android:id="@+id/Ttime"
         android:text="@string/temp"
-        android:textSize="80sp"
+        android:textSize="75sp"
         android:paddingTop="50dp"
         android:textColor="@color/colorPrimary"
         android:textAlignment="center"
@@ -162,6 +162,35 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true" />
+
+    <Button
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:text="G"
+        android:id="@+id/Gps"
+        android:background="@drawable/custum_button"
+        android:layout_alignTop="@+id/Ttime"
+        android:layout_alignStart="@+id/mesure" />
+
+    <Button
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:text="M"
+        android:id="@+id/mesure"
+        android:background="@drawable/custum_button"
+        android:layout_below="@+id/Gps"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="35dp" />
+
+    <Button
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:text="A"
+        android:id="@+id/autre"
+        android:background="@drawable/custum_button"
+        android:layout_below="@+id/mesure"
+        android:layout_alignEnd="@+id/Ttime"
+        android:layout_marginTop="36dp" />
 
 
 </RelativeLayout>
