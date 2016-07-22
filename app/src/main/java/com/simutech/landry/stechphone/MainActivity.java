@@ -172,7 +172,6 @@ public class MainActivity extends Activity implements LocationListener {
             operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
             dual = false;
         }
-        
         handler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
@@ -193,7 +192,6 @@ public class MainActivity extends Activity implements LocationListener {
                     switch (value) {
                         case 1:
                             but[key].setEnabled(true);
-
                             break;
                         case -1:
                             but[key].setEnabled(false);
@@ -233,22 +231,23 @@ public class MainActivity extends Activity implements LocationListener {
                 to.createtwo();
                 return;
             }
-
+            for (Button b:but) {
+                b.setEnabled(true);
+            }
             r3g.setClickable(false);
             r4g.setClickable(false);
             r2g.setClickable(false);
-            obtenirPosition();
             pause = false;
             if (!continu) {
                 continu = true;
                 er = new Erreur(but);
+                obtenirPosition();
                 er.cont = true;
                 er.started = false;
                 majheure = new Heurethread();
                 majheure.start();
                 start = new Monthread();
                 start.start();
-
             }
             btnstart.setEnabled(false);
             btnStop.setEnabled(true);
@@ -460,8 +459,8 @@ public class MainActivity extends Activity implements LocationListener {
             er.NewErreur(Heure,Erreur.ERREUR_GPS,"autorisation gps refusée",6,handler);
             return;
         }
-        for (int k = 1; k < 3; k++)
-            lManager.requestLocationUpdates(sources[k], 100, 0, this);
+
+            lManager.requestLocationUpdates("gps", 100, 0, this);
         location = lManager.getLastKnownLocation("gps");
         if(location == null) {
             er.NewErreur(Heure, Erreur.ERREUR_GPS, "dernière position gps inconnu ",7,handler);
@@ -602,25 +601,13 @@ public class MainActivity extends Activity implements LocationListener {
         }
         if (lat[0] == 0) {
             text[idsim] = signal + " " + mode[idsim] + Heure + " erreur geolocalisation\n ";
-            if(couleurfond!=0)
             runOnUiThread(new Runnable() {
                 public void run() {
                     ToastMaker to = new ToastMaker(MainActivity.this, "Attention erreur geolocalisation veillez relancer" +
                             " l'application ou les paramètres", Color.RED);
                     to.createone();
-                    statut.setBackgroundColor(Color.RED);
-                    couleurfond = 0;
                 }
             });
-        } else {
-            if (couleurfond == 0)
-                runOnUiThread(new Runnable() {
-                    public void run() {
-                        if (continu  && pause)
-                            statut.setBackgroundColor(Color.GREEN);
-                        couleurfond = 1;
-                    }
-                });
         }
         wm.WriteSettings(text[idsim], idsim,Heure);
     }

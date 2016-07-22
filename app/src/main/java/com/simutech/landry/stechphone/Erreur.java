@@ -109,7 +109,7 @@ public class Erreur {
                 color[i] = val;
                 Message myMessage = handler.obtainMessage();
                 Bundle messageBundle=new Bundle();
-                messageBundle.putInt("key", i);
+                messageBundle.putInt("KEY", i);
                 messageBundle.putInt("value", val);
                 myMessage.setData(messageBundle);
                 handler.sendMessage(myMessage);
@@ -174,17 +174,19 @@ public class Erreur {
                         e.printStackTrace();
                     }
                     c = Calendar.getInstance();
-                    if ((c.getTimeInMillis() - debut[0]) > 2000) {
+                    if ((c.getTimeInMillis() - debut[0]) > 1500) {
                         tooglecolor(0, 1);
                         Dureec[0] = 0;
                     } else
                         Dureec[0]++;
-                    if ((c.getTimeInMillis() - debut[1]) > 2000) {
+
+                    if ((c.getTimeInMillis() - debut[1]) > 1500) {
                         tooglecolor(1, 1);
                         Dureec[1] = 0;
                     } else
                         Dureec[1]++;
-                    if ((c.getTimeInMillis() - debut[2]) > 2000) {
+
+                    if ((c.getTimeInMillis() - debut[2]) > 1500) {
                         tooglecolor(2, 1);
                         Dureec[2] = 0;
                     } else
