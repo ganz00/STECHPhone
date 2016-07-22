@@ -240,24 +240,17 @@ public class MainActivity extends Activity implements LocationListener {
     };
 
     private String format(int signal, int idsim) {
-        boolean valid=false;
-        //Time today = new Time(Time.getCurrentTimezone());
-        //today.setToNow();
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            return "TODO";
-        }
-
         if (location != null) {
             lat[0] = location.getLatitude();
             lon[0] = location.getLongitude();
-            lat[1] = location2.getLatitude();
-            lon[1] = location2.getLongitude();
         } else {
             lat[idsim] = 0;
             lon[idsim] = 0;
         }
-        return signal + ";" + Heure + ";" + lat[0] + " ; " + lon[0] + "\n";
+        if(signal >= -150 && signal < 0)
+            return signal + ";" + Heure + ";" + lat[0] + " ; " + lon[0] + "\n";
+        else
+            return -150 + ";" + Heure + ";" + lat[0] + " ; " + lon[0] + "\n";
 
     }
 
@@ -265,7 +258,6 @@ public class MainActivity extends Activity implements LocationListener {
     private void ReadcellInfo() {
         if (TelephonManager.getAllCellInfo() != null) {
             List<CellInfo> list = TelephonManager.getAllCellInfo();
-            String dat = getNetworkClass(mContext);
             for (CellInfo cell : list) {
                 int dbmValue;
                 if (cell.isRegistered()) {
@@ -296,13 +288,6 @@ public class MainActivity extends Activity implements LocationListener {
                             signalgsm = dbmValue;
                             return;
                         }
-                        if (mode[0].equals("3G")) {
-                            CellInfoGsm cellGSM = (CellInfoGsm) cell;
-                            dbmValue = cellGSM.getCellSignalStrength().getDbm();
-                            signalcdma = dbmValue;
-                            return;
-                        }
-
                     }
 
                 }
@@ -385,11 +370,6 @@ public class MainActivity extends Activity implements LocationListener {
     public void onLocationChanged(Location llocation) {
         if (llocation.getProvider().equals("gps")) {
             this.location = llocation;
-            //dbm1.setText(llocation.getProvider().charAt(0)+" "+llocation.getLatitude()+"\n "+llocation.getLongitude());
-        }
-        if (llocation.getProvider().equals("network")) {
-            this.location2 = llocation;
-            //dbm2.setText(llocation.getProvider().charAt(0)+" "+llocation.getLatitude()+"\n "+llocation.getLongitude());
         }
 
     }
@@ -456,7 +436,7 @@ public class MainActivity extends Activity implements LocationListener {
                             Tdbm2 = operateur[1] + " " + signalgsm + " dbm";
                         }
                     } else {
-                        if (mode[0].equals("3G") ) {
+                        if (mode[0].equals("3G") && type.equals("3G") ) {
                                 Thread t3 = new savethread(signalcdma, 0);
                                 t3.start();
                                 Tdbm1 = operateur[0] + " " + signalcdma + " dbm";
@@ -495,7 +475,6 @@ public class MainActivity extends Activity implements LocationListener {
                             if (i == 0)
                                 statut.setText("" + i);
                             else {
-                                //statut.setText(i + "  en " + duree + "ms\n");
                                 statut.setText(i + "");
                                 dbm1.setText(Tdbm1);
                                 dbm2.setText(Tdbm2);
@@ -563,7 +542,7 @@ public class MainActivity extends Activity implements LocationListener {
             case TelephonyManager.NETWORK_TYPE_LTE:
                 return "4G";
             default:
-                return "Unknown";
+                return "SIM 1 Unknown";
         }
     }
 
