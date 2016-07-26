@@ -11,8 +11,11 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.telephony.CellInfo;
@@ -40,6 +43,7 @@ import android.os.Handler;
 import java.lang.reflect.Field;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.logging.LogRecord;
 
@@ -107,6 +111,8 @@ public class MainActivity extends Activity implements LocationListener {
     int signallte = 0;
     int a = 0;
     Handler handler;
+    Long timemaj;
+    Calendar cal;
     int[] color;
     boolean[] colorb;
     MultiSimListener muti;
@@ -156,19 +162,19 @@ public class MainActivity extends Activity implements LocationListener {
         Date d = new Date();
         DateFormat df = new DateFormat();
         Heure = (String) DateFormat.format("HH:mm:ss", d);
-
+        er = new Erreur(but);
         List<SubscriptionInfo> list = Sm.getActiveSubscriptionInfoList();
         final Button[] but = new Button[]{btnEgps, btnEmes, btnEautre};
-        wE = new Writter("ErreurAppli",1,Heure,er,handler);
+        wE = new Writter("ErreurAppli",1,Heure,er,handler,mContext);
         if (list.size() == 2) {
-            wm = new Writter("donnéesmesure",2,Heure,er,handler);
+            wm = new Writter("donnéesmesure",2,Heure,er,handler,mContext);
             operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
             operateur[1] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(1).getCarrierName();
             idsim1 = list.get(0).getSubscriptionId();
             idsim2 = list.get(1).getSubscriptionId();
             muti = new MultiSimListener(idsim2);
         } else {
-            wm = new Writter("donnéesmesure",1,Heure,er,handler);
+            wm = new Writter("donnéesmesure",1,Heure,er,handler,mContext);
             operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
             dual = false;
         }
@@ -242,13 +248,13 @@ public class MainActivity extends Activity implements LocationListener {
                 continu = true;
                 er = new Erreur(but);
                 obtenirPosition();
-                er.cont = true;
-                er.started = false;
                 majheure = new Heurethread();
                 majheure.start();
                 start = new Monthread();
                 start.start();
+                er.started = false;
             }
+            er.cont = true;
             btnstart.setEnabled(false);
             btnStop.setEnabled(true);
             btnpause.setEnabled(true);
@@ -264,8 +270,10 @@ public class MainActivity extends Activity implements LocationListener {
             a = 2;
             continu = false;
             er.cont = false;
+            er.play = false;
+            er.color[3]=3;
             try {
-                Thread.sleep(900);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -279,11 +287,20 @@ public class MainActivity extends Activity implements LocationListener {
             ToastMaker to = new ToastMaker(MainActivity.this, "Fin enregistrement", Color.RED);
             to.createone();
             couleurfond=0;
-            statut.setBackgroundColor(Color.WHITE);
+
             info.setText("dernier enregistrement a "+Heure);
             Erreur.save(wE,Heure,Ldate);
-            er.play = false ;
-
+            if(dual) {
+                MediaScannerConnection.scanFile(mContext, new String[]{wm.myDir.toString(), wm.myFile[0].toString()}, null, null);
+                if(wE.myFile[0]!=null)
+                MediaScannerConnection.scanFile(mContext, new String[]{wE.myDir.toString(), wE  .myFile[0].toString()}, null, null);
+                MediaScannerConnection.scanFile(mContext, new String[]{wm.myDir.toString(), wm.myFile[1].toString()}, null, null);
+            }else{
+                MediaScannerConnection.scanFile(mContext, new String[]{wm.myDir.toString(), wm.myFile[0].toString()}, null, null);
+                if(wE.myFile[0]!=null)
+                MediaScannerConnection.scanFile(mContext, new String[]{wE.myDir.toString(), wE.myFile[0].toString()}, null, null);
+            }
+            statut.setBackgroundColor(Color.WHITE);
         }
     };
     View.OnClickListener changeClickListener = new View.OnClickListener() {
@@ -306,10 +323,10 @@ public class MainActivity extends Activity implements LocationListener {
             btnpause.setEnabled(false);
             ToastMaker to = new ToastMaker(MainActivity.this, "interuption enregistrement", Color.BLUE);
             to.createone();
-            couleurfond = 2;
-            statut.setBackgroundColor(Color.GRAY);
             er.cont = false;
             er.color[3]=2;
+            statut.setBackgroundColor(Color.GRAY);
+
 
 
         }
@@ -470,6 +487,8 @@ public class MainActivity extends Activity implements LocationListener {
     public void onLocationChanged(Location llocation) {
         if (llocation.getProvider().equals("gps")) {
             this.location = llocation;
+            cal = new GregorianCalendar();
+            timemaj = cal.getTimeInMillis();
             nbpos++;
         }
 
@@ -571,8 +590,10 @@ public class MainActivity extends Activity implements LocationListener {
                         }
                     }
                     i++;
-                    if(nbpos >2 && i>20 && nbpos <= i) {
+                    cal = Calendar.getInstance();
+                    if(nbpos >2 && cal.getTimeInMillis() - timemaj > 1000) {
                         er.NewErreur(Heure, Erreur.ERREUR_GPS, "problème actualisation corrdonées gps ",8,handler);
+                        nbpos = i;
                     }
                     c = Calendar.getInstance();
                     duree = c.getTimeInMillis() - debut;
