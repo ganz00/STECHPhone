@@ -18,23 +18,28 @@ import java.util.Date;
 public class Writter {
     public File[] myFile ;
     public File myDir;
+    public File cartolille;
     public String dir;
     public boolean success;
     public int nbmes = 0;
+    String Dossier = "Carto_Lille";
     Erreur er;
     Handler handler;
 
-    public Writter(String dir, int nb, String Heure, Erreur er , Handler h, Context context) {
+    public Writter(String dir, int nb, String Heure, Erreur er , Handler h, Context context,String date) {
         this.er =er;
         this.handler = h;
         myFile = new File[nb];
-        this.dir = dir;
-        this.myDir = new File(Environment.getExternalStorageDirectory() + File.separator + dir); //pour créer le repertoire dans lequel on va mettre notre fichier
+        this.dir = dir+" "+date;
+        this.cartolille  = new File(Environment.getExternalStorageDirectory() + File.separator + Dossier);
+        this.myDir = new File(cartolille.getAbsolutePath() + File.separator + this.dir); //pour créer le repertoire dans lequel on va mettre notre fichier
          success = true;
 
-        if (!myDir.exists()) {
-            success = myDir.mkdir(); //On crée le répertoire (s'il n'existe pas!!)
+        if (!cartolille.exists()) {
+            success = cartolille.mkdir(); //On crée le répertoire (s'il n'existe pas!!)
         }
+        if (success && !myDir.exists() )
+            success = myDir.mkdir();
         if (!success) {
              er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "impossible de creer le dossier ",11,handler);
         }

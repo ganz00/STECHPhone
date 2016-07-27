@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -145,6 +146,7 @@ public class Erreur {
             for (Erreur e : Erreur.list) {
                 w.WriteSettings(e.toString(), heure, date);
             }
+
     }
 
     public void setHeure(String heure) {

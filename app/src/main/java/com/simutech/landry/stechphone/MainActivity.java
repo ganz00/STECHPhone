@@ -1,5 +1,6 @@
 package com.simutech.landry.stechphone;
 
+
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -12,6 +13,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.MediaScannerConnection;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,6 +31,7 @@ import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -40,7 +43,18 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.os.Bundle;
 import android.os.Handler;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -67,12 +81,12 @@ public class MainActivity extends Activity implements LocationListener {
     public RadioButton r2g;
     public RelativeLayout rela;
     Calendar c;
-
+    static List<File> listM = new ArrayList<File>();
+    static List<File> listE = new ArrayList<File>();
     private LocationManager lManager;
     private Location location;
     private Location location2;
     private static Context mContext;
-
     TelephonyManager TelephonManager;
     String[] operateur = new String[2];
     String[] text = new String[2];
@@ -81,8 +95,8 @@ public class MainActivity extends Activity implements LocationListener {
     int num = 0;
     long duree;
     long debut;
-    String Ldate="";
-    String Heure ="";
+    String Ldate = "";
+    String Heure = "";
     boolean pause = false;
     public String[] sources;
     Thread start;
@@ -90,8 +104,8 @@ public class MainActivity extends Activity implements LocationListener {
     Thread coulerT;
     boolean continu = false;
     boolean colorchanged = false;
-    Writter wm ;
-    Writter wE ;
+    Writter wm;
+    Writter wE;
     boolean dual = true;
     SubscriptionManager Sm;
     String Tdbm1;
@@ -101,10 +115,10 @@ public class MainActivity extends Activity implements LocationListener {
     double[] lat = new double[2];
     double[] lon = new double[2];
     String type = "";
-    boolean valid=true;
+    boolean valid = true;
     int couleurfond = 1; // 1 vert -1 rouge 2 gris 0 blanc
     int i = 0;
-    int nbpos=0;
+    int nbpos = 0;
     int demarer = 0;
     int signalcdma = 0;
     int signalgsm = 0;
@@ -118,6 +132,7 @@ public class MainActivity extends Activity implements LocationListener {
     MultiSimListener muti;
     Erreur er;
     Button[] but;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -129,14 +144,14 @@ public class MainActivity extends Activity implements LocationListener {
 
         mode[1] = "2G";
         mode[0] = "";
-        color = new int[]{1,1,1};
+        color = new int[]{1, 1, 1};
 
-        colorb = new boolean[]{false,false,false};
+        colorb = new boolean[]{false, false, false};
         rela = (RelativeLayout) findViewById(R.id.relay);
         statut = (TextView) findViewById(R.id.Ttime);
         dbm1 = (TextView) findViewById(R.id.dbm1);
         dbm2 = (TextView) findViewById(R.id.dbm2);
-        info = (TextView) findViewById(R.id.info) ;
+        info = (TextView) findViewById(R.id.info);
         r4g = (RadioButton) findViewById(R.id.radio2G);
         r3g = (RadioButton) findViewById(R.id.radio3G);
         r2g = (RadioButton) findViewById(R.id.radio4G);
@@ -153,28 +168,29 @@ public class MainActivity extends Activity implements LocationListener {
         btnpause.setOnClickListener(pauseClickListener);
         btnsend = (Button) findViewById(R.id.btnsend);
         btnsend.setOnClickListener(sendClickListener);
-        but = new Button[]{btnEgps,btnEmes,btnEautre};
+        but = new Button[]{btnEgps, btnEmes, btnEautre};
         btnpause.setEnabled(false);
-        btnsend.setEnabled(false);
+        //btnsend.setEnabled(false);
         TelephonManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         lManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         btnStop.setEnabled(false);
         Date d = new Date();
         DateFormat df = new DateFormat();
         Heure = (String) DateFormat.format("HH:mm:ss", d);
+        Ldate = (String) DateFormat.format("dd:MM:yyyy", d);
         er = new Erreur(but);
         List<SubscriptionInfo> list = Sm.getActiveSubscriptionInfoList();
         final Button[] but = new Button[]{btnEgps, btnEmes, btnEautre};
-        wE = new Writter("ErreurAppli",1,Heure,er,handler,mContext);
+        wE = new Writter("ErreurAppli", 1, Heure, er, handler, mContext,"");
         if (list.size() == 2) {
-            wm = new Writter("donnéesmesure",2,Heure,er,handler,mContext);
+            wm = new Writter("Fichiersmesure", 2, Heure, er, handler, mContext,Ldate);
             operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
             operateur[1] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(1).getCarrierName();
             idsim1 = list.get(0).getSubscriptionId();
             idsim2 = list.get(1).getSubscriptionId();
             muti = new MultiSimListener(idsim2);
         } else {
-            wm = new Writter("donnéesmesure",1,Heure,er,handler,mContext);
+            wm = new Writter("Fichiersmesure", 1, Heure, er, handler, mContext,Ldate);
             operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
             dual = false;
         }
@@ -215,7 +231,7 @@ public class MainActivity extends Activity implements LocationListener {
 
     View.OnClickListener startClickListener = new View.OnClickListener() {
         public void onClick(final View v) {
-            if(!(wm.success && wE.success)){
+            if (!(wm.success && wE.success)) {
                 ToastMaker to = new ToastMaker(MainActivity.this, "Impossible d'enregistrer verifier la mémoire du télephone", Color.RED);
                 to.createtwo();
                 return;
@@ -237,7 +253,7 @@ public class MainActivity extends Activity implements LocationListener {
                 to.createtwo();
                 return;
             }
-            for (Button b:but) {
+            for (Button b : but) {
                 b.setEnabled(true);
             }
             r3g.setClickable(false);
@@ -271,7 +287,7 @@ public class MainActivity extends Activity implements LocationListener {
             continu = false;
             er.cont = false;
             er.play = false;
-            er.color[3]=3;
+            er.color[3] = 3;
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -286,20 +302,10 @@ public class MainActivity extends Activity implements LocationListener {
             btnStop.setEnabled(false);
             ToastMaker to = new ToastMaker(MainActivity.this, "Fin enregistrement", Color.RED);
             to.createone();
-            couleurfond=0;
-
-            info.setText("dernier enregistrement a "+Heure);
-            Erreur.save(wE,Heure,Ldate);
-            if(dual) {
-                MediaScannerConnection.scanFile(mContext, new String[]{wm.myDir.toString(), wm.myFile[0].toString()}, null, null);
-                if(wE.myFile[0]!=null)
-                MediaScannerConnection.scanFile(mContext, new String[]{wE.myDir.toString(), wE  .myFile[0].toString()}, null, null);
-                MediaScannerConnection.scanFile(mContext, new String[]{wm.myDir.toString(), wm.myFile[1].toString()}, null, null);
-            }else{
-                MediaScannerConnection.scanFile(mContext, new String[]{wm.myDir.toString(), wm.myFile[0].toString()}, null, null);
-                if(wE.myFile[0]!=null)
-                MediaScannerConnection.scanFile(mContext, new String[]{wE.myDir.toString(), wE.myFile[0].toString()}, null, null);
-            }
+            couleurfond = 0;
+            info.setText("dernier enregistrement a " + Heure);
+            Erreur.save(wE, Heure, Ldate);
+            scan();
             statut.setBackgroundColor(Color.WHITE);
         }
     };
@@ -324,9 +330,8 @@ public class MainActivity extends Activity implements LocationListener {
             ToastMaker to = new ToastMaker(MainActivity.this, "interuption enregistrement", Color.BLUE);
             to.createone();
             er.cont = false;
-            er.color[3]=2;
+            er.color[3] = 2;
             statut.setBackgroundColor(Color.GRAY);
-
 
 
         }
@@ -334,6 +339,28 @@ public class MainActivity extends Activity implements LocationListener {
     View.OnClickListener sendClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
+            new Thread()
+            {
+                public void run() {
+                    final  boolean  reussi = sendFTP();
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            String message;
+                            int colori;
+                            if(reussi) {
+                                message = "Envoie reussi";
+                                colori = Color.GREEN;
+                            }else{
+                                message = "Echec envoie ";
+                                colori = Color.RED;
+                            }
+                            ToastMaker to = new ToastMaker(MainActivity.this ,message, colori);
+                            to.createone();
+                        }
+                    });
+
+                }
+            }.start();
 
         }
     };
@@ -346,7 +373,7 @@ public class MainActivity extends Activity implements LocationListener {
             lat[idsim] = 0;
             lon[idsim] = 0;
         }
-        if(signal >= -150 && signal < 0)
+        if (signal >= -150 && signal < 0)
             return signal + ";" + Heure + ";" + lat[0] + " ; " + lon[0] + "\n";
         else
             return -150 + ";" + Heure + ";" + lat[0] + " ; " + lon[0] + "\n";
@@ -396,8 +423,8 @@ public class MainActivity extends Activity implements LocationListener {
                 }
             }
         }
-        if(valid){
-            er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Sim 1"+mode[0]+" "+operateur[0]+" impossible de recuperer les données des antennes ",1,handler);
+        if (valid) {
+            er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Sim 1" + mode[0] + " " + operateur[0] + " impossible de recuperer les données des antennes ", 1, handler);
         }
     }
 
@@ -417,17 +444,17 @@ public class MainActivity extends Activity implements LocationListener {
                 subIdField.set(this, subId);
                 this.subId = subId;
             } catch (NoSuchFieldException e) {
-                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2"+mode[1]+" "+operateur[1]+" acces dual sim impossible ",2,handler);
+                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2" + mode[1] + " " + operateur[1] + " acces dual sim impossible ", 2, handler);
                 btnpause.callOnClick();
                 e.printStackTrace();
 
             } catch (IllegalAccessException e) {
-                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2"+mode[1]+" "+operateur[1]+"access dual sim impossible",3,handler);
+                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2" + mode[1] + " " + operateur[1] + "access dual sim impossible", 3, handler);
                 btnpause.callOnClick();
                 e.printStackTrace();
 
             } catch (IllegalArgumentException e) {
-                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2"+mode[1]+" "+operateur[1]+"acces dual sim impossible ",4,handler);
+                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Sim 2" + mode[1] + " " + operateur[1] + "acces dual sim impossible ", 4, handler);
                 btnpause.callOnClick();
                 e.printStackTrace();
 
@@ -440,7 +467,7 @@ public class MainActivity extends Activity implements LocationListener {
             if ((ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) &&
                     (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
                 // TODO: Consider calling
-                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Sim 2"+mode[1]+" "+operateur[1]+"problème  autorisation signal ",5,handler);
+                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Sim 2" + mode[1] + " " + operateur[1] + "problème  autorisation signal ", 5, handler);
                 //    ActivityCompat#requestPermissions
                 // here to request the missing permissions, and then overriding
                 //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
@@ -473,14 +500,14 @@ public class MainActivity extends Activity implements LocationListener {
             sources[j++] = provider;
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
-            er.NewErreur(Heure,Erreur.ERREUR_GPS,"autorisation gps refusée",6,handler);
+            er.NewErreur(Heure, Erreur.ERREUR_GPS, "autorisation gps refusée", 6, handler);
             return;
         }
 
-            lManager.requestLocationUpdates("gps", 100, 0, this);
+        lManager.requestLocationUpdates("gps", 100, 0, this);
         location = lManager.getLastKnownLocation("gps");
-        if(location == null) {
-            er.NewErreur(Heure, Erreur.ERREUR_GPS, "dernière position gps inconnu ",7,handler);
+        if (location == null) {
+            er.NewErreur(Heure, Erreur.ERREUR_GPS, "dernière position gps inconnu ", 7, handler);
         }
     }
 
@@ -520,9 +547,9 @@ public class MainActivity extends Activity implements LocationListener {
             while (continu) {
                 if (a == 0 || a == 2) {
                     c = Calendar.getInstance();
-                    wm.WriteSettings(" mesure " + operateur[0] + " " + mode[0] + " " + Ldate + " " + Heure + "\n", mode[0], Ldate, nu, operateur[0], 0,Heure);
+                    wm.WriteSettings(" mesure " + operateur[0] + " " + mode[0] + " " + Ldate + " " + Heure + "\n", mode[0], Ldate, nu, operateur[0], 0, Heure);
                     if (dual)
-                        wm.WriteSettings(" mesure " + operateur[1] + " " + mode[1] + " " + Ldate + " " + Heure + "\n", mode[1], Ldate, nu, operateur[1], 1,Heure);
+                        wm.WriteSettings(" mesure " + operateur[1] + " " + mode[1] + " " + Ldate + " " + Heure + "\n", mode[1], Ldate, nu, operateur[1], 1, Heure);
                     a = 0;
                 } else {
                     if (a == 1 && pause) {
@@ -547,41 +574,41 @@ public class MainActivity extends Activity implements LocationListener {
                     }
                     ReadcellInfo();
                     if (mode[0].equals("4G") && type.equals("4G")) {
-                        Thread t1 = new savethread(signallte,0);
+                        Thread t1 = new savethread(signallte, 0);
                         t1.start();
                         Tdbm1 = operateur[0] + " " + signallte + " dbm";
                         if (dual) {
-                            Thread t2 = new savethread(signalgsm,1);
+                            Thread t2 = new savethread(signalgsm, 1);
                             t2.start();
                             Tdbm2 = operateur[1] + " " + signalgsm + " dbm";
                         }
                     } else {
-                        if (mode[0].equals("3G") && type.equals("3G") ) {
-                                Thread t3 = new savethread(signalcdma, 0);
-                                t3.start();
-                                Tdbm1 = operateur[0] + " " + signalcdma + " dbm";
+                        if (mode[0].equals("3G") && type.equals("3G")) {
+                            Thread t3 = new savethread(signalcdma, 0);
+                            t3.start();
+                            Tdbm1 = operateur[0] + " " + signalcdma + " dbm";
                             if (dual) {
-                                Thread t4 = new savethread(signalgsm,1);
+                                Thread t4 = new savethread(signalgsm, 1);
                                 t4.start();
                                 Tdbm2 = operateur[1] + " " + signalgsm + " dbm";
                             }
                         } else {
                             if (mode[0].equals("2G") && type.equals("2G")) {
-                                Thread t5 = new savethread(signalgsm,0);
+                                Thread t5 = new savethread(signalgsm, 0);
                                 t5.start();
                                 Tdbm1 = operateur[0] + " " + signalgsm + " dbm";
                                 if (dual) {
-                                    Thread t6 = new savethread(signalgsm,1);
+                                    Thread t6 = new savethread(signalgsm, 1);
                                     t6.start();
                                     Tdbm2 = operateur[1] + " " + signalgsm + " dbm";
                                 }
                             } else {
-                                Thread t7 = new savethread(-150,0);
+                                Thread t7 = new savethread(-150, 0);
                                 t7.start();
                                 Tdbm1 = operateur[0] + " " + -150 + " dbm";
-                                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Type Reseau inconnu ",9,handler);
+                                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Type Reseau inconnu ", 9, handler);
                                 if (dual) {
-                                    Thread t8 = new savethread(signalgsm,1);
+                                    Thread t8 = new savethread(signalgsm, 1);
                                     t8.start();
                                     Tdbm2 = operateur[1] + " " + signalgsm + " dbm";
 
@@ -591,8 +618,8 @@ public class MainActivity extends Activity implements LocationListener {
                     }
                     i++;
                     cal = Calendar.getInstance();
-                    if(nbpos >2 && cal.getTimeInMillis() - timemaj > 1000) {
-                        er.NewErreur(Heure, Erreur.ERREUR_GPS, "problème actualisation corrdonées gps ",8,handler);
+                    if (nbpos > 2 && cal.getTimeInMillis() - timemaj > 1000) {
+                        er.NewErreur(Heure, Erreur.ERREUR_GPS, "problème actualisation corrdonées gps ", 8, handler);
                         nbpos = i;
                     }
                     c = Calendar.getInstance();
@@ -630,7 +657,7 @@ public class MainActivity extends Activity implements LocationListener {
                 }
             });
         }
-        wm.WriteSettings(text[idsim], idsim,Heure);
+        wm.WriteSettings(text[idsim], idsim, Heure);
     }
 
     public String getNetworkClass(Context context) {
@@ -657,7 +684,7 @@ public class MainActivity extends Activity implements LocationListener {
             case TelephonyManager.NETWORK_TYPE_LTE:
                 return "4G";
             default:
-                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Type de reseau inconnu",9,handler);
+                er.NewErreur(Heure, Erreur.ERREUR_MESURE, "Type de reseau inconnu", 9, handler);
                 return "reseau sim 1 inconnu";
         }
     }
@@ -686,10 +713,12 @@ public class MainActivity extends Activity implements LocationListener {
     public class savethread extends Thread {
         int signal;
         int a;
-        public savethread(int signal,int id) {
+
+        public savethread(int signal, int id) {
             this.signal = signal;
             this.a = id;
         }
+
         public void run() {
             prewrite(this.signal, this.a);
         }
@@ -697,10 +726,11 @@ public class MainActivity extends Activity implements LocationListener {
 
     public class Heurethread extends Thread {
 
-        public Heurethread(){
+        public Heurethread() {
         }
+
         public void run() {
-            while(continu) {
+            while (continu) {
                 Date d = new Date();
                 DateFormat df = new DateFormat();
                 Heure = (String) DateFormat.format("HH:mm:ss", d);
@@ -708,10 +738,80 @@ public class MainActivity extends Activity implements LocationListener {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Erreur Systeme THREAD ZOMBI",10,handler);
+                    er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "Erreur Systeme THREAD ZOMBI", 10, handler);
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    private boolean  sendFTP() {
+
+        try {
+            Listfile();
+            SimpleFTP ftp = new SimpleFTP();
+
+            // Connect to an FTP server on port 21.
+            //ftp.connect("ftp.simutech-uae.fr", 21, "simutech", "simutech92");
+            ftp.connect("89.82.86.126", 21, "simutech92", "simutech");
+            // Set binary mode.
+            ftp.bin();
+            ftp.mkd("test123");
+            // Change to a new working directory on the FTP server.
+            ftp.cwd("Cartolille");
+            String nom ="";
+            if(dual) {
+                 nom = operateur[0] + " " + mode[0] + " " + operateur[1] + " " + mode[1];
+            }else {
+                 nom = operateur[0] + " " + mode[0];
+            }
+            String DIR = nom+" "+wm.dir;
+            Boolean state = ftp.mkd(DIR);
+                ftp.cwd(DIR);
+                // Upload some files.
+                for(File f : listM){
+                    ftp.stor(f);
+            }
+            // Quit from the FTP server.
+            ftp.disconnect();
+            return true;
+        }
+        catch (IOException e) {
+            String eror = e.toString();
+            return false;
+        }
+
+    }
+    public void Listfile(){
+        File f2 = wm.myDir;
+        File f1 = wE.myDir;
+
+        File[] fichiers = f2.listFiles();
+        File[] fichiers1 = f1.listFiles();
+        int k= 0;
+        listM.clear();
+        listE.clear();
+        // Si le répertoire n'est pas vide...
+        if(fichiers != null)
+            // On les ajoute à  l'adaptateur
+            for(File f : fichiers) {
+                listM.add(k, f);
+                k++;
+            }
+        k=0;
+        for(File f : fichiers1) {
+            listE.add(k, f);
+            k++;
+        }
+    }
+    public void scan(){
+        Listfile();
+        MediaScannerConnection.scanFile(mContext, new String[]{wm.cartolille.getAbsolutePath()}, null, null);
+        for(File f : listM){
+            MediaScannerConnection.scanFile(mContext, new String[]{wm.myDir.toString(), f.toString()}, null, null);
+        }
+        for(File f : listE){
+            MediaScannerConnection.scanFile(mContext, new String[]{wE.myDir.toString(), f.toString()}, null, null);
         }
     }
 }
