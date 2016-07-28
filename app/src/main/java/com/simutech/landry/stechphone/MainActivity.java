@@ -6,6 +6,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -62,6 +63,7 @@ import java.util.List;
 import java.util.logging.LogRecord;
 
 public class MainActivity extends Activity implements LocationListener {
+    public static final String VOITURE_CLE = "voiture";
     public TextView statut;
     public TextView dbm1;
     public TextView dbm2;
@@ -80,23 +82,23 @@ public class MainActivity extends Activity implements LocationListener {
     public RadioButton r3g;
     public RadioButton r2g;
     public RelativeLayout rela;
-    Calendar c;
+    public Calendar c;
+    public int voiture=0;
     static List<File> listM = new ArrayList<File>();
     static List<File> listE = new ArrayList<File>();
     private LocationManager lManager;
     private Location location;
     private Location location2;
     private static Context mContext;
-    TelephonyManager TelephonManager;
-    String[] operateur = new String[2];
-    String[] text = new String[2];
-    String[] mode = new String[2];
-    String nu = "";
-    int num = 0;
-    long duree;
-    long debut;
-    String Ldate = "";
-    String Heure = "";
+    public TelephonyManager TelephonManager;
+    public String[] operateur = new String[2];
+    public  String[] text = new String[2];
+    public String[] mode = new String[2];
+    public String nu = "";
+    public int num = 0;
+    public long duree,debut;
+    public String Ldate = "";
+    public String Heure = "";
     boolean pause = false;
     public String[] sources;
     Thread start;
@@ -115,7 +117,7 @@ public class MainActivity extends Activity implements LocationListener {
     double[] lat = new double[2];
     double[] lon = new double[2];
     String type = "";
-    boolean valid = true;
+    boolean valid = true,canstart = true;
     int couleurfond = 1; // 1 vert -1 rouge 2 gris 0 blanc
     int i = 0;
     int nbpos = 0;
@@ -132,7 +134,7 @@ public class MainActivity extends Activity implements LocationListener {
     MultiSimListener muti;
     Erreur er;
     Button[] but;
-
+    public SharedPreferences sharedPref;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -170,29 +172,35 @@ public class MainActivity extends Activity implements LocationListener {
         btnsend.setOnClickListener(sendClickListener);
         but = new Button[]{btnEgps, btnEmes, btnEautre};
         btnpause.setEnabled(false);
-        //btnsend.setEnabled(false);
-        TelephonManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        lManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         btnStop.setEnabled(false);
         Date d = new Date();
         DateFormat df = new DateFormat();
-        Heure = (String) DateFormat.format("HH:mm:ss", d);
-        Ldate = (String) DateFormat.format("dd:MM:yyyy", d);
+        Heure = (String) DateFormat.format("HH-mm-ss", d);
+        Ldate = (String) DateFormat.format("dd-MM-yyyy", d);
         er = new Erreur(but);
-        List<SubscriptionInfo> list = Sm.getActiveSubscriptionInfoList();
         final Button[] but = new Button[]{btnEgps, btnEmes, btnEautre};
         wE = new Writter("ErreurAppli", 1, Heure, er, handler, mContext,"");
-        if (list.size() == 2) {
-            wm = new Writter("Fichiersmesure", 2, Heure, er, handler, mContext,Ldate);
-            operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
-            operateur[1] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(1).getCarrierName();
-            idsim1 = list.get(0).getSubscriptionId();
-            idsim2 = list.get(1).getSubscriptionId();
-            muti = new MultiSimListener(idsim2);
-        } else {
-            wm = new Writter("Fichiersmesure", 1, Heure, er, handler, mContext,Ldate);
-            operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
-            dual = false;
+        try {
+            TelephonManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            lManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            List<SubscriptionInfo> list = Sm.getActiveSubscriptionInfoList();
+            if (list.size() == 2) {
+                wm = new Writter("Fichiersmesure", 2, Heure, er, handler, mContext, Ldate);
+                operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
+                operateur[1] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(1).getCarrierName();
+                idsim1 = list.get(0).getSubscriptionId();
+                idsim2 = list.get(1).getSubscriptionId();
+                muti = new MultiSimListener(idsim2);
+            } else {
+                wm = new Writter("Fichiersmesure", 1, Heure, er, handler, mContext, Ldate);
+                operateur[0] = (String) Sm.getActiveSubscriptionInfoForSimSlotIndex(0).getCarrierName();
+                dual = false;
+            }
+        }catch (Exception e){
+            ToastMaker to = new ToastMaker(MainActivity.this, "Redemarer l'application et Verifier que le telephone est bien connecté a un reseau", Color.RED);
+            to.createtwo();
+            canstart = false;
         }
         handler = new Handler() {
             @Override
@@ -220,17 +228,59 @@ public class MainActivity extends Activity implements LocationListener {
                             break;
                     }
 
-
                 }
+                if(key == 7) sauvegarde();
             }
 
         };
+         if( sharedPref.getInt(VOITURE_CLE , 0) == 0){
+             ToastMaker to = new ToastMaker(MainActivity.this, "vous avez qu'elle voiture ?", Color.GRAY);
+             to.showDialogtwo();
+             SharedPreferences.Editor editor = sharedPref.edit();
+             editor.putInt(VOITURE_CLE, to.voiture);
+             editor.commit();
+         }else{
+             voiture = sharedPref.getInt(VOITURE_CLE , 0);
+         }
 
+
+    }
+
+
+
+    private void sauvegarde() {
+        if(!ToastMaker.save){
+            return;
+        }
+        new Thread()
+        {
+            public void run() {
+                final  boolean  reussi = sendFTP(voiture);
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        String message;
+                        int colori;
+                        if(reussi) {
+                            message = "Envoie reussi";
+                            colori = Color.GREEN;
+                        }else{
+                            message = "Echec envoie ";
+                            colori = Color.RED;
+                        }
+                        ToastMaker to = new ToastMaker(MainActivity.this ,message, colori);
+                        to.createone();
+                    }
+                });
+
+            }
+        }.start();
     }
 
 
     View.OnClickListener startClickListener = new View.OnClickListener() {
         public void onClick(final View v) {
+            if(!canstart)
+                return;
             if (!(wm.success && wE.success)) {
                 ToastMaker to = new ToastMaker(MainActivity.this, "Impossible d'enregistrer verifier la mémoire du télephone", Color.RED);
                 to.createtwo();
@@ -339,29 +389,8 @@ public class MainActivity extends Activity implements LocationListener {
     View.OnClickListener sendClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-            new Thread()
-            {
-                public void run() {
-                    final  boolean  reussi = sendFTP();
-                    runOnUiThread(new Runnable() {
-                        public void run() {
-                            String message;
-                            int colori;
-                            if(reussi) {
-                                message = "Envoie reussi";
-                                colori = Color.GREEN;
-                            }else{
-                                message = "Echec envoie ";
-                                colori = Color.RED;
-                            }
-                            ToastMaker to = new ToastMaker(MainActivity.this ,message, colori);
-                            to.createone();
-                        }
-                    });
-
-                }
-            }.start();
-
+            ToastMaker to = new ToastMaker(MainActivity.this, "confirmer l'envoie", Color.GRAY,handler);
+            to.showDialogone();
         }
     };
 
@@ -733,7 +762,7 @@ public class MainActivity extends Activity implements LocationListener {
             while (continu) {
                 Date d = new Date();
                 DateFormat df = new DateFormat();
-                Heure = (String) DateFormat.format("HH:mm:ss", d);
+                Heure = (String) DateFormat.format("HH-mm-ss", d);
                 Ldate = (String) DateFormat.format("dd-MM-yyyy", d);
                 try {
                     Thread.sleep(100);
@@ -745,20 +774,22 @@ public class MainActivity extends Activity implements LocationListener {
         }
     }
 
-    private boolean  sendFTP() {
-
+    private boolean  sendFTP(int v) {
+        String USER;
         try {
             Listfile();
             SimpleFTP ftp = new SimpleFTP();
-
+            if(v == 1){
+                 USER = "clio";
+            }else{
+                USER = "scenic";
+            }
             // Connect to an FTP server on port 21.
-            //ftp.connect("ftp.simutech-uae.fr", 21, "simutech", "simutech92");
-            ftp.connect("89.82.86.126", 21, "simutech92", "simutech");
+            ftp.connect("89.82.86.126", 21,USER, "simutech");
             // Set binary mode.
             ftp.bin();
-            ftp.mkd("test123");
+            ftp.cwd("cartoLille");
             // Change to a new working directory on the FTP server.
-            ftp.cwd("Cartolille");
             String nom ="";
             if(dual) {
                  nom = operateur[0] + " " + mode[0] + " " + operateur[1] + " " + mode[1];
@@ -766,15 +797,16 @@ public class MainActivity extends Activity implements LocationListener {
                  nom = operateur[0] + " " + mode[0];
             }
             String DIR = nom+" "+wm.dir;
-            Boolean state = ftp.mkd(DIR);
-                ftp.cwd(DIR);
+            ftp.mkd(DIR);
+            ftp.cwd(DIR);
+            Boolean state3 = false;
                 // Upload some files.
                 for(File f : listM){
-                    ftp.stor(f);
+                   state3 = ftp.stor(f);
             }
             // Quit from the FTP server.
             ftp.disconnect();
-            return true;
+            return true && state3;
         }
         catch (IOException e) {
             String eror = e.toString();

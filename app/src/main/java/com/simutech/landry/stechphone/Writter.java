@@ -84,7 +84,7 @@ public class Writter {
                 output.close();
                 nbmes++;
             } catch (IOException e) {
-                 er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "impossible d'acceder au fichier ",13,handler);
+                er.NewErreur(Heure, Erreur.ERREUR_AUTRE, "impossible d'acceder au fichier ",13,handler);
                 e.printStackTrace();
             }
 
