@@ -17,9 +17,8 @@ public class ToastMaker {
     int color;
     Activity a;
     public static boolean save=false;
-    public static boolean over=true;
-    Handler h;
-    public int voiture=0; // 1 clio 2 scenic
+    public Handler h;
+    public static int voiture=0; // 1 clio 2 scenic
 
     public ToastMaker(Activity a,String t, int color){
         this.color = color;
@@ -31,7 +30,6 @@ public class ToastMaker {
         this.color = color;
         this.text = t;
         this.a = a;
-        over = false;
         this.h = h;
     }
     public void createone(){
@@ -61,11 +59,7 @@ public class ToastMaker {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             save = true;
-                            Message myMessage = h.obtainMessage();
-                            Bundle messageBundle = new Bundle();
-                            messageBundle.putInt("KEY", 7);
-                            myMessage.setData(messageBundle);
-                            h.sendMessage(myMessage);
+                            send(7,0);
                         }
                     }
             );
@@ -73,11 +67,7 @@ public class ToastMaker {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     save = false;
-                    Message myMessage = h.obtainMessage();
-                    Bundle messageBundle = new Bundle();
-                    messageBundle.putInt("KEY", 7);
-                    myMessage.setData(messageBundle);
-                    h.sendMessage(myMessage);
+                    send(7,0);
                 }
             });
             builder.show();
@@ -86,14 +76,14 @@ public class ToastMaker {
     public void showDialogtwo(){
         AlertDialog.Builder builder = new AlertDialog.Builder(a);
 
-        builder.setTitle("confirmation");
+        builder.setTitle("Voiture");
 
         builder.setMessage(text);
         builder.setPositiveButton("clio", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         voiture = 1;
-
+                        send(8,1);
                     }
                 }
         );
@@ -101,9 +91,18 @@ public class ToastMaker {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                         voiture = 2;
+                        send(8,2);
             }
         });
         builder.show();
 
+    }
+    public void send(int key,int value){
+        Message myMessage = h.obtainMessage();
+        Bundle messageBundle = new Bundle();
+        messageBundle.putInt("KEY", key);
+        messageBundle.putInt("value", value);
+        myMessage.setData(messageBundle);
+        h.sendMessage(myMessage);
     }
 }

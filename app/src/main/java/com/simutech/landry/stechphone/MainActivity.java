@@ -230,15 +230,17 @@ public class MainActivity extends Activity implements LocationListener {
 
                 }
                 if(key == 7) sauvegarde();
+                if(key == 8) {
+                    SharedPreferences.Editor editor = sharedPref.edit();
+                    editor.putInt(VOITURE_CLE, value);
+                    editor.commit();
+                }
             }
 
         };
          if( sharedPref.getInt(VOITURE_CLE , 0) == 0){
-             ToastMaker to = new ToastMaker(MainActivity.this, "vous avez qu'elle voiture ?", Color.GRAY);
+             ToastMaker to = new ToastMaker(MainActivity.this, "vous avez qu'elle voiture ?", Color.GRAY,handler);
              to.showDialogtwo();
-             SharedPreferences.Editor editor = sharedPref.edit();
-             editor.putInt(VOITURE_CLE, to.voiture);
-             editor.commit();
          }else{
              voiture = sharedPref.getInt(VOITURE_CLE , 0);
          }
@@ -781,26 +783,20 @@ public class MainActivity extends Activity implements LocationListener {
             SimpleFTP ftp = new SimpleFTP();
             if(v == 1){
                  USER = "clio";
-            }else{
+            } else {
                 USER = "scenic";
             }
             // Connect to an FTP server on port 21.
-            ftp.connect("89.82.86.126", 21,USER, "simutech");
+            ftp.connect("ftp.simutech-uae.fr", 21,"simutech", "simutech92");
             // Set binary mode.
             ftp.bin();
-            ftp.cwd("cartoLille");
+            ftp.cwd("Cartolille");
             // Change to a new working directory on the FTP server.
-            String nom ="";
-            if(dual) {
-                 nom = operateur[0] + " " + mode[0] + " " + operateur[1] + " " + mode[1];
-            }else {
-                 nom = operateur[0] + " " + mode[0];
-            }
-            String DIR = nom+" "+wm.dir;
+            String nom =USER;
+            String DIR = nom.toUpperCase()+" "+wm.dir;
             ftp.mkd(DIR);
             ftp.cwd(DIR);
             Boolean state3 = false;
-                // Upload some files.
                 for(File f : listM){
                    state3 = ftp.stor(f);
             }
