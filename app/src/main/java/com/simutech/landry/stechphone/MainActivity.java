@@ -9,16 +9,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.MediaScannerConnection;
-import android.net.ConnectivityManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
+import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.telephony.CellInfo;
@@ -32,35 +29,22 @@ import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.format.DateFormat;
-import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.os.Bundle;
-import android.os.Handler;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.logging.LogRecord;
 
 public class MainActivity extends Activity implements LocationListener {
     public static final String VOITURE_CLE = "voiture";
@@ -679,7 +663,7 @@ public class MainActivity extends Activity implements LocationListener {
             text[idsim] = format(signal, idsim);
         }
         if (lat[0] == 0) {
-            text[idsim] = signal + " " + mode[idsim] + Heure + " erreur geolocalisation\n ";
+            text[idsim] = signal + " " + mode[idsim] +" "+ Heure + " erreur geolocalisation\n ";
             runOnUiThread(new Runnable() {
                 public void run() {
                     ToastMaker to = new ToastMaker(MainActivity.this, "Attention erreur geolocalisation veillez relancer" +
