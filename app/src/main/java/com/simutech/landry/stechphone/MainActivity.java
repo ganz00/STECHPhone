@@ -766,12 +766,12 @@ public class MainActivity extends Activity implements LocationListener {
             Listfile();
             SimpleFTP ftp = new SimpleFTP();
             if(v == 1){
-                 USER = "clio";
+                 USER = "CLIO";
             } else {
-                USER = "scenic";
+                USER = "SCENIC";
             }
             // Connect to an FTP server on port 21.
-            ftp.connect("ftp.simutech-uae.fr", 21,"simutech", "simutech92");
+            ftp.connect("server", 21,"user", "pass");
             // Set binary mode.
             ftp.bin();
             ftp.cwd("Cartolille");
