@@ -15,88 +15,182 @@
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:id="@+id/Ttime"
-        android:text="Temp"
-        android:textSize="40dp"
-        android:paddingTop="70dp"
+        android:text="@string/temp"
+        android:textSize="75sp"
+        android:paddingTop="50dp"
         android:textColor="@color/colorPrimary"
         android:textAlignment="center"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="86dp" />
-
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="100px"
-        android:id="@+id/Lcontrol"
-        android:layout_below="@+id/Ttime"
-        android:layout_alignParentEnd="true">
-
-        <Button
-            android:layout_width="0dip"
-            android:layout_weight="0.33"
-            android:layout_height="wrap_content"
-            android:text="Stop"
-            android:id="@+id/btnStop"
-            android:layout_below="@+id/Ttime"
-            android:layout_alignParentStart="true"
-             />
-
-        <Button
-            android:layout_width="0dp"
-            android:layout_weight="0.33"
-            android:layout_height="wrap_content"
-            android:text="Envoyer"
-            android:id="@+id/btnsend"
-            android:layout_below="@+id/linearLayout"
-            android:layout_centerHorizontal="true" />
-
-        <Button
-            android:layout_width="0dip"
-            android:layout_weight="0.33"
-            android:layout_height="wrap_content"
-            android:text="Changer"
-            android:id="@+id/btnChange"
-            android:layout_alignTop="@+id/btnstart"
-            android:layout_alignParentEnd="true" />
-    </LinearLayout>
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="100px"
-        android:layout_centerVertical="true"
+        android:layout_marginBottom="20dp"
         android:layout_alignParentStart="true"
-        android:id="@+id/linearLayout">
+        android:layout_alignParentEnd="true" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:id="@+id/linearLayout2"
+        android:layout_below="@+id/dbmValue"
+        android:layout_alignParentStart="true">
 
         <Button
             android:layout_width="0dp"
             android:layout_weight="0.5"
             android:layout_height="wrap_content"
-            android:text="Start"
+            android:text="@string/start"
+            android:background="@color/start"
             android:id="@+id/btnstart"
-            android:layout_centerVertical="true"
-            android:layout_centerHorizontal="true"
-             />
+            />
 
         <Button
             android:layout_width="0dip"
             android:layout_weight="0.5"
             android:layout_height="wrap_content"
-            android:text="Pause"
-            android:id="@+id/btnpause"
-            android:layout_alignParentStart="true"
-             />
+            android:background = "@color/stop"
+            android:text="@string/stop"
+            android:id="@+id/btnStop" />
 
     </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:id="@+id/Lcontrol"
+        android:layout_marginTop="25dp"
+        android:layout_below="@+id/linearLayout2"
+        android:layout_alignParentStart="true">
+
+        <Button
+            android:layout_width="0dip"
+            android:layout_weight="0.29"
+            android:layout_height="wrap_content"
+            android:background="@color/normal"
+            android:text="@string/pause"
+            android:id="@+id/btnpause" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="0.41"
+            android:layout_height="wrap_content"
+            android:text="@string/envoyer"
+            android:id="@+id/btnsend"
+            android:background="@color/colorPrimary" />
+
+        <Button
+            android:layout_width="0dip"
+            android:layout_weight="0.29"
+            android:layout_height="wrap_content"
+            android:text="@string/settings"
+            android:id="@+id/btnChange"
+            android:background="@color/normal" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="25dp"
+        android:layout_alignEnd="@+id/linearLayout2"
+        android:id="@+id/dbmValue"
+
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/Ttime">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="0.33"
+            android:layout_height="wrap_content"
+            android:text="@string/statut_sims_1"
+            android:id="@+id/dbm1" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="0.33"
+            android:layout_height="wrap_content"
+            android:text="@string/statut_sim_2"
+            android:id="@+id/dbm2" />
+    </LinearLayout>
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:id="@+id/linearLayout3"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true">
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/radio"
+                android:orientation="horizontal">
+                <RadioButton android:id="@+id/radio4G"
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/_4g"
+                    android:onClick="onRadioButtonClicked"/>
+                <RadioButton android:id="@+id/radio3G"
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/_3g"
+                    android:onClick="onRadioButtonClicked"
+                    />
+                <RadioButton android:id="@+id/radio2G"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/_2g"
+                    android:onClick="onRadioButtonClicked"/>
+            </RadioGroup>
+        </TableRow>
+    </TableLayout>
+
+    <EditText
+        android:editable="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/editText"
+        android:layout_above="@+id/linearLayout3"
+        android:layout_alignParentStart="true"
+        android:text="@string/techno_text"
+        android:layout_alignEnd="@+id/Lcontrol"
+        android:inputType="none" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Text"
-        android:id="@+id/pos"
-        android:layout_alignParentBottom="true"
+        android:id="@+id/info"
         android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/Ttime"
-        android:layout_alignEnd="@+id/Lcontrol" />
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:text="G"
+        android:id="@+id/Gps"
+        android:background="@drawable/custum_button"
+        android:layout_alignTop="@+id/Ttime"
+        android:layout_alignStart="@+id/mesure" />
+
+    <Button
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:text="M"
+        android:id="@+id/mesure"
+        android:background="@drawable/custum_button"
+        android:layout_below="@+id/Gps"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="35dp" />
+
+    <Button
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:text="A"
+        android:id="@+id/autre"
+        android:background="@drawable/custum_button"
+        android:layout_below="@+id/mesure"
+        android:layout_alignEnd="@+id/Ttime"
+        android:layout_marginTop="36dp" />
 
 
 </RelativeLayout>
