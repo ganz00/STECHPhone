@@ -777,7 +777,7 @@ public class MainActivity extends Activity implements LocationListener {
             ftp.cwd("Cartolille");
             // Change to a new working directory on the FTP server.
             String nom =USER;
-            String DIR = nom.toUpperCase()+" "+wm.dir;
+            String DIR = nom+" "+wm.dir;
             ftp.mkd(DIR);
             ftp.cwd(DIR);
             Boolean state3 = false;
